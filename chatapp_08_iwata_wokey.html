@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <title>Chatアプリ</title>
+    <style>
+        #output {
+            height: 300px;
+            overflow-y: scroll;
+        }
+        
+        .message-container {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #EDEDED;
+            max-width: 70%;
+        }
+
+        .message-container p {
+            margin: 0;
+        }
+
+        .delete-btn {
+            background-color: #FF0000;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .sender {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .receiver {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .message-text {
+            margin-left: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            background-color: #DCF8C6;
+            max-width: 70%;
+        }
+
+        .sender .message-text {
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+
+        .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div>
+            名前: <input type="text" id="uname">
+        </div>
+        <div>
+            <textarea name="" id="text" cols="30" rows="10"></textarea>
+            <button id="send">送信</button>
+        </div>
+        <div id="output"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+        import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved }
+            from "https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "",
+            authDomain: "fir-demo-5653a.firebaseapp.com",
+            projectId: "fir-demo-5653a",
+            storageBucket: "fir-demo-5653a.appspot.com",
+            messagingSenderId: "1090053457401",
+            appId: "1:1090053457401:web:fef84dd3211fd7cefea928"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+
+        // Realtime DBに接続する
+        const db = getDatabase(app);
+        const dbRef = ref(db, "chat");
+
+        // 送信ボタンが押されたら
+        $("#send").on("click", function(){
+            // 保存したいデータのオブジェクトを作る
+            const msg = {
+                uname: $("#uname").val(),
+                text: $("#text").val()
+            };
+
+            console.log(msg);
+
+            // 新規のデータを送れる状態にセット
+            const newPostRef = push(dbRef);
+          
+            // DBに値を送信
+            set(newPostRef, msg);
+        });
+
+        onChildAdded(dbRef, function(data){
+            const msg = data.val();
+            const key = data.key;
+
+            const messageContainer = $("<div>").addClass("message-container");
+            const messageText = $("<p>").text(msg.text);
+            const deleteButton = $("<button>").addClass("delete-btn").text("削除");
+            const nameText = $("<p>").text(msg.uname);
+
+            if (msg.uname === $("#uname").val()) {
+                messageContainer.addClass("sender");
+                messageText.addClass("message-text");
+                deleteButton.addClass("sender");
+                nameText.addClass("sender");
+            } else {
+                messageContainer.addClass("receiver");
+                messageText.addClass("message-text");
+                deleteButton.addClass("receiver");
+                nameText.addClass("receiver");
+            }
+
+            messageContainer.append(nameText, messageText, deleteButton);
+            $("#output").append(messageContainer);
+
+            // メッセージを削除するボタンのクリックイベント
+            deleteButton.on("click", function(){
+                remove(ref(db, `chat/${key}`));
+                messageContainer.remove();
+            });
+        });
+
+    </script>
+</body>
+
+</html>
